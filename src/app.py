@@ -599,4 +599,4 @@ with SinglePageWithDrawerLayout(server) as layout:
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    server.start()
+    server.start(host="0.0.0.0")
