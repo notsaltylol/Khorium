@@ -5,9 +5,6 @@ Khorium
 An example Trame application
 
 
-* Free software: Apache Software License
-
-
 Installing
 ----------
 Build and install the Vue components

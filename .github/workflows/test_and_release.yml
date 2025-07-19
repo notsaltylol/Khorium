@@ -2,9 +2,9 @@ name: Test and Release
 
 on:
   push:
-    branches: [ master ]
+    branches: [main]
   pull_request:
-    branches: [ master ]
+    branches: [main]
 
 jobs:
   pre-commit:
@@ -30,37 +30,28 @@ jobs:
       matrix:
         python-version: ["3.9"]
         config:
-        - {
-            name: "Linux",
-            os: ubuntu-latest
-          }
-        - {
-            name: "MacOSX",
-            os: macos-latest
-          }
-        - {
-            name: "Windows",
-            os: windows-latest
-          }
+          - { name: "Linux", os: ubuntu-latest }
+          - { name: "MacOSX", os: macos-latest }
+          - { name: "Windows", os: windows-latest }
 
     defaults:
       run:
         shell: bash
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install and Run Tests
-      run: |
-        pip install .
-        pip install -r tests/requirements.txt
-        pytest -s ./tests
+      - name: Install and Run Tests
+        run: |
+          pip install .
+          pip install -r tests/requirements.txt
+          pytest -s ./tests
 
   test-npm-build:
     runs-on: ubuntu-latest
@@ -81,11 +72,7 @@ jobs:
           npm run build
 
   release:
-    needs: [
-      pre-commit,
-      pytest,
-      test-npm-build,
-    ]
+    needs: [pre-commit, pytest, test-npm-build]
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -115,8 +102,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      # https://docs.pypi.org/trusted-publishers/using-a-publisher/
-      - name: Publish package distributions to PyPI
-        if: steps.release.outputs.released == 'true'
-        uses: pypa/gh-action-pypi-publish@release/v1
-
+      # # https://docs.pypi.org/trusted-publishers/using-a-publisher/
+      # - name: Publish package distributions to PyPI
+      #   if: steps.release.outputs.released == 'true'
+      #   uses: pypa/gh-action-pypi-publish@release/v1
