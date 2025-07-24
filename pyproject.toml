@@ -10,6 +10,9 @@ dependencies = [
     "trame-vuetify",
     "trame-vtk",
     "pywebview>=5.4",
+    "vtk>=9.5.0",
+    "trame-components>=2.5.0",
+    "watchdog>=6.0.0",
 ]
 requires-python = ">=3.9"
 readme = "README.rst"

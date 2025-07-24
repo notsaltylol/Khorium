@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: Khorium
+    env: python
+    buildCommand: source ./scripts/install.sh
+    startCommand: ./scripts/start.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
