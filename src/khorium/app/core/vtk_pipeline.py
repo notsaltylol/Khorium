@@ -9,6 +9,7 @@ from vtkmodules.vtkFiltersCore import vtkContourFilter
 # Required for interactor initialization
 from vtkmodules.vtkInteractionStyle import vtkInteractorStyleSwitch  # noqa: F401
 from vtkmodules.vtkIOXML import vtkXMLUnstructuredGridReader
+from vtkmodules.vtkIOLegacy import vtkUnstructuredGridReader
 from vtkmodules.vtkRenderingAnnotation import vtkCubeAxesActor
 from vtkmodules.vtkRenderingCore import (
     vtkActor,
@@ -22,6 +23,16 @@ from khorium.app.core.constants import CURRENT_DIRECTORY
 
 
 class VtkPipeline:
+    def _create_reader(self, file_path):
+        """Create appropriate VTK reader based on file extension"""
+        if file_path.lower().endswith('.vtu'):
+            return vtkXMLUnstructuredGridReader()
+        elif file_path.lower().endswith('.vtk'):
+            return vtkUnstructuredGridReader()
+        else:
+            # Default to XML reader
+            return vtkXMLUnstructuredGridReader()
+
     def __init__(self):
         # Create renderer, render window, and interactor
         self.renderer = vtkRenderer()
@@ -31,10 +42,17 @@ class VtkPipeline:
         self.renderWindowInteractor = vtkRenderWindowInteractor()
         self.renderWindowInteractor.SetRenderWindow(self.renderWindow)
         self.renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToTrackballCamera()
+        
+        # Track generated mesh actors separately
+        self.generated_mesh_reader = None
+        self.generated_mesh_mapper = None
+        self.generated_mesh_actor = None
+        self.has_generated_mesh = False
 
         # Read Data
-        self.reader = vtkXMLUnstructuredGridReader()
-        self.reader.SetFileName(os.path.join(CURRENT_DIRECTORY, "cad_000.vtu"))
+        initial_file = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
+        self.reader = self._create_reader(initial_file)
+        self.reader.SetFileName(initial_file)
         self.reader.Update()
 
         # Extract Array/Field information
@@ -174,8 +192,27 @@ class VtkPipeline:
 
         self.renderer.ResetCamera()
 
-    def load_file(self, file_path):
-        """Load a new VTU file and update the pipeline"""
+    def load_file(self, file_path, is_generated_mesh=False):
+        """Load a new VTU or VTK file and update the pipeline"""
+        if is_generated_mesh:
+            return self._load_generated_mesh(file_path)
+        else:
+            return self._load_original_data(file_path)
+    
+    def _load_original_data(self, file_path):
+        """Load original VTU data"""
+        # Create appropriate reader for the file type
+        current_reader_type = type(self.reader)
+        new_reader = self._create_reader(file_path)
+        
+        # If reader type changed, we need to reconnect the pipeline
+        if type(new_reader) != current_reader_type:
+            self.reader = new_reader
+            # Reconnect mesh mapper
+            self.mesh_mapper.SetInputConnection(self.reader.GetOutputPort())
+            # Reconnect contour filter
+            self.contour.SetInputConnection(self.reader.GetOutputPort())
+        
         # Update the reader with new file
         self.reader.SetFileName(file_path)
         self.reader.Modified()  # Force reader to recognize file changes
@@ -259,3 +296,49 @@ class VtkPipeline:
             return True
         print(f">>> VTK Pipeline: No readable arrays found in {file_path}")
         return False
+    
+    def _load_generated_mesh(self, file_path):
+        """Load generated mesh file (VTK format)"""
+        print(f">>> VTK Pipeline: Loading generated mesh from {file_path}")
+        
+        # Create mesh reader and pipeline if not exists
+        if self.generated_mesh_reader is None:
+            self.generated_mesh_reader = self._create_reader(file_path)
+            self.generated_mesh_mapper = vtkDataSetMapper()
+            self.generated_mesh_actor = vtkActor()
+            self.generated_mesh_actor.SetMapper(self.generated_mesh_mapper)
+            
+            # Style the mesh differently (wireframe with different color)
+            self.generated_mesh_actor.GetProperty().SetRepresentationToWireframe()
+            self.generated_mesh_actor.GetProperty().SetColor(1.0, 0.0, 0.0)  # Red color
+            self.generated_mesh_actor.GetProperty().SetLineWidth(2)
+            
+            # Add to renderer but keep hidden initially
+            self.renderer.AddActor(self.generated_mesh_actor)
+            self.generated_mesh_actor.SetVisibility(False)
+        
+        # Update reader with new file
+        self.generated_mesh_reader.SetFileName(file_path)
+        self.generated_mesh_reader.Modified()
+        
+        try:
+            self.generated_mesh_reader.Update()
+            self.generated_mesh_mapper.SetInputConnection(self.generated_mesh_reader.GetOutputPort())
+            self.has_generated_mesh = True
+            print(">>> VTK Pipeline: Generated mesh loaded successfully")
+            return True
+        except Exception as e:
+            print(f">>> VTK Pipeline: Error loading generated mesh: {e}")
+            return False
+    
+    def set_mesh_visibility(self, visible):
+        """Toggle visibility of generated mesh"""
+        if self.has_generated_mesh and self.generated_mesh_actor:
+            self.generated_mesh_actor.SetVisibility(visible)
+            print(f">>> VTK Pipeline: Mesh visibility set to {visible}")
+        else:
+            print(">>> VTK Pipeline: No generated mesh to toggle")
+            
+    def has_mesh(self):
+        """Check if generated mesh is available"""
+        return self.has_generated_mesh

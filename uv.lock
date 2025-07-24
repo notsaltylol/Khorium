@@ -1480,6 +1480,7 @@ version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "pywebview" },
+    { name = "requests" },
     { name = "trame" },
     { name = "trame-components" },
     { name = "trame-vtk" },
@@ -1512,6 +1513,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=3" },
     { name = "pywebview", specifier = ">=5.4" },
     { name = "pywebview", marker = "extra == 'app'" },
+    { name = "requests", specifier = ">=2.32.4" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "trame", specifier = ">=3.7.1" },
     { name = "trame-components", specifier = ">=2.5.0" },

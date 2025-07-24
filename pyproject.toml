@@ -13,6 +13,7 @@ dependencies = [
     "vtk>=9.5.0",
     "trame-components>=2.5.0",
     "watchdog>=6.0.0",
+    "requests>=2.32.4",
 ]
 requires-python = ">=3.9"
 readme = "README.rst"
