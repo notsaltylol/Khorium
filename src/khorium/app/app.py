@@ -83,18 +83,18 @@ class MyTrameApp:
                 if not file_helper.content or len(file_helper.content) == 0:
                     print(f">>> ENGINE(a): Error - Empty file: {filename}")
                     continue
-                
+
                 # Save the uploaded file temporarily
                 if not file_helper.name:
-                    print(f">>> ENGINE(a): Error - No temporary file name available")
+                    print(">>> ENGINE(a): Error - No temporary file name available")
                     continue
-                    
+
                 try:
                     with open(file_helper.name, "wb") as f:
                         f.write(file_helper.content)
                     temp_file_path = file_helper.name
                     print(f">>> ENGINE(a): File saved temporarily to: {temp_file_path}")
-                except IOError as e:
+                except OSError as e:
                     print(f">>> ENGINE(a): Error saving temporary file: {e}")
                     continue
 
@@ -102,14 +102,19 @@ class MyTrameApp:
                 target_file_path = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
                 try:
                     shutil.copy2(temp_file_path, target_file_path)
-                    print(f">>> ENGINE(a): Replaced {target_file_path} with uploaded file")
-                    
+                    print(
+                        f">>> ENGINE(a): Replaced {target_file_path} with uploaded file"
+                    )
+
                     # Verify file was written correctly
-                    if not os.path.exists(target_file_path) or os.path.getsize(target_file_path) == 0:
-                        print(f">>> ENGINE(a): Error - Target file not properly written")
+                    if (
+                        not os.path.exists(target_file_path)
+                        or os.path.getsize(target_file_path) == 0
+                    ):
+                        print(">>> ENGINE(a): Error - Target file not properly written")
                         continue
-                        
-                except (IOError, OSError) as e:
+
+                except OSError as e:
                     print(f">>> ENGINE(a): Error copying file to target: {e}")
                     continue
 
@@ -131,7 +136,9 @@ class MyTrameApp:
 
                     print(">>> ENGINE(a): VTK pipeline reloaded with new file")
                 else:
-                    print(">>> ENGINE(a): Failed to load VTU file - file may be corrupted")
+                    print(
+                        ">>> ENGINE(a): Failed to load VTU file - file may be corrupted"
+                    )
             else:
                 print(f">>> ENGINE(a): Ignoring non-VTU file: {filename}")
 

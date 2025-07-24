@@ -35,7 +35,7 @@ class VtkPipeline:
         # Read Data
         self.reader = vtkXMLUnstructuredGridReader()
         self.reader.SetFileName(os.path.join(CURRENT_DIRECTORY, "cad_000.vtu"))
-        
+
         # Try to read the file with error handling
         try:
             self.reader.Update()
@@ -74,14 +74,14 @@ class VtkPipeline:
                         "type": association,
                     }
                 )
-        
+
         # Handle case where no arrays could be read
         if not self.dataset_arrays:
             print(">>> VTK Pipeline: No readable arrays found in VTU file")
             self.default_min, self.default_max = 0.0, 1.0
             self._setup_default_pipeline()
             return
-            
+
         default_array = self.dataset_arrays[0]
         self.default_min, self.default_max = default_array.get("range")
 
@@ -175,22 +175,22 @@ class VtkPipeline:
         self.mesh_actor = vtkActor()
         self.mesh_actor.SetMapper(self.mesh_mapper)
         self.renderer.AddActor(self.mesh_actor)
-        
+
         # Create empty contour filter and mapper
         self.contour = vtkContourFilter()
         self.contour_mapper = vtkDataSetMapper()
         self.contour_actor = vtkActor()
         self.contour_actor.SetMapper(self.contour_mapper)
         self.renderer.AddActor(self.contour_actor)
-        
+
         # Create cube axes
         self.cube_axes = vtkCubeAxesActor()
         self.renderer.AddActor(self.cube_axes)
         self.cube_axes.SetCamera(self.renderer.GetActiveCamera())
-        
+
         # Set default contour value
         self.contour_value = 0.5
-        
+
         self.renderer.ResetCamera()
 
     def load_file(self, file_path):
@@ -198,7 +198,7 @@ class VtkPipeline:
         # Update the reader with new file
         self.reader.SetFileName(file_path)
         self.reader.Modified()  # Force reader to recognize file changes
-        
+
         # Try to read the file with error handling
         try:
             self.reader.Update()
@@ -276,6 +276,5 @@ class VtkPipeline:
                 f">>> VTK Pipeline: Loaded new file {file_path} with {len(self.dataset_arrays)} arrays"
             )
             return True
-        else:
-            print(f">>> VTK Pipeline: No readable arrays found in {file_path}")
-            return False
+        print(f">>> VTK Pipeline: No readable arrays found in {file_path}")
+        return False
