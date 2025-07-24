@@ -35,17 +35,7 @@ class VtkPipeline:
         # Read Data
         self.reader = vtkXMLUnstructuredGridReader()
         self.reader.SetFileName(os.path.join(CURRENT_DIRECTORY, "cad_000.vtu"))
-
-        # Try to read the file with error handling
-        try:
-            self.reader.Update()
-        except Exception as e:
-            print(f">>> VTK Pipeline: Error reading VTU file: {e}")
-            # Set default values for failed read
-            self.dataset_arrays = []
-            self.default_min, self.default_max = 0.0, 1.0
-            self._setup_default_pipeline()
-            return
+        self.reader.Update()
 
         # Extract Array/Field information
         self.dataset_arrays = []
@@ -63,8 +53,6 @@ class VtkPipeline:
             field_arrays, association = field
             for i in range(field_arrays.GetNumberOfArrays()):
                 array = field_arrays.GetArray(i)
-                if array is None:
-                    continue
                 array_range = array.GetRange()
                 self.dataset_arrays.append(
                     {
@@ -74,13 +62,6 @@ class VtkPipeline:
                         "type": association,
                     }
                 )
-
-        # Handle case where no arrays could be read
-        if not self.dataset_arrays:
-            print(">>> VTK Pipeline: No readable arrays found in VTU file")
-            self.default_min, self.default_max = 0.0, 1.0
-            self._setup_default_pipeline()
-            return
 
         default_array = self.dataset_arrays[0]
         self.default_min, self.default_max = default_array.get("range")

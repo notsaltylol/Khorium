@@ -54,93 +54,10 @@ class MyTrameApp:
     def widget_change(self):
         print(">>> ENGINE(a): Widget Change")
 
-    @controller.set("upload_file")
-    def upload_file(self, files):
-        """Handle .vtu file upload and reload VTK pipeline"""
-        for file in files:
-            file_helper = ClientFile(file)
-            print(f">>> ENGINE(a): Uploading file: {file_helper.info}")
-
-            # Get filename - file_helper.info might be a string or dict
-            filename = ""
-            if isinstance(file_helper.info, dict):
-                filename = file_helper.info.get("name", "")
-            elif isinstance(file_helper.info, str):
-                # If info is a string like "File: cad_378.vtu of size 5639377 and type "
-                # Extract the filename from the string
-                match = re.search(r"File: ([^\s]+)", file_helper.info)
-                if match:
-                    filename = match.group(1)
-                else:
-                    filename = file_helper.info
-            else:
-                # Try to get name attribute from the file object
-                filename = getattr(file, "name", "")
-
-            # Check if it's a .vtu file
-            if filename.lower().endswith(".vtu"):
-                # Validate file content before processing
-                if not file_helper.content or len(file_helper.content) == 0:
-                    print(f">>> ENGINE(a): Error - Empty file: {filename}")
-                    continue
-
-                # Save the uploaded file temporarily
-                if not file_helper.name:
-                    print(">>> ENGINE(a): Error - No temporary file name available")
-                    continue
-
-                try:
-                    with open(file_helper.name, "wb") as f:
-                        f.write(file_helper.content)
-                    temp_file_path = file_helper.name
-                    print(f">>> ENGINE(a): File saved temporarily to: {temp_file_path}")
-                except OSError as e:
-                    print(f">>> ENGINE(a): Error saving temporary file: {e}")
-                    continue
-
-                # Replace the existing cad_000.vtu file
-                target_file_path = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
-                try:
-                    shutil.copy2(temp_file_path, target_file_path)
-                    print(
-                        f">>> ENGINE(a): Replaced {target_file_path} with uploaded file"
-                    )
-
-                    # Verify file was written correctly
-                    if (
-                        not os.path.exists(target_file_path)
-                        or os.path.getsize(target_file_path) == 0
-                    ):
-                        print(">>> ENGINE(a): Error - Target file not properly written")
-                        continue
-
-                except OSError as e:
-                    print(f">>> ENGINE(a): Error copying file to target: {e}")
-                    continue
-
-                # Clean up temporary file
-                try:
-                    if temp_file_path:
-                        os.remove(temp_file_path)
-                    print(f">>> ENGINE(a): Cleaned up temporary file: {temp_file_path}")
-                except OSError:
-                    pass  # Ignore if temp file cleanup fails
-
-                # Reload VTK pipeline with new file
-                if self.vtk_pipeline.load_file(target_file_path):
-                    # Update the view
-                    if hasattr(self.ctrl, "view_update"):
-                        self.ctrl.view_update()
-                    if hasattr(self.ctrl, "view_reset_camera"):
-                        self.ctrl.view_reset_camera()
-
-                    print(">>> ENGINE(a): VTK pipeline reloaded with new file")
-                else:
-                    print(
-                        ">>> ENGINE(a): Failed to load VTU file - file may be corrupted"
-                    )
-            else:
-                print(f">>> ENGINE(a): Ignoring non-VTU file: {filename}")
+    # @controller.set("upload_file")
+    # def upload_file(self, files):
+    #     """Handle .vtu file upload and reload VTK pipeline"""
+    #     return
 
     def _build_ui(self, *_args, **_kwargs):
         with SinglePageLayout(self.server) as layout:
@@ -149,16 +66,16 @@ class MyTrameApp:
             with layout.toolbar:
                 vuetify3.VSpacer()
 
-                # File upload button
-                with vuetify3.VBtn(icon=True, classes="mr-2"):
-                    vuetify3.VIcon("mdi-upload")
-                    html.Input(
-                        type="file",
-                        accept=".vtu",
-                        style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;",
-                        change=(self.ctrl.upload_file, "[$event.target.files]"),
-                        __events=["change"],
-                    )
+                # # File upload button
+                # with vuetify3.VBtn(icon=True, classes="mr-2"):
+                #     vuetify3.VIcon("mdi-upload")
+                #     html.Input(
+                #         type="file",
+                #         accept=".vtu",
+                #         style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;",
+                #         change=(self.ctrl.upload_file, "[$event.target.files]"),
+                #         __events=["change"],
+                #     )
                 # my_widgets.CustomWidget(
                 #     attribute_name="Hello",
                 #     py_attr_name="World",
