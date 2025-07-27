@@ -217,8 +217,9 @@ class MyTrameApp:
 
     def _build_ui(self, *_args, **_kwargs):
         with SinglePageLayout(self.server) as layout:
-            # Toolbar
-            layout.title.set_text("Khorium")
+            # Hide title and drawer
+            layout.title.hide()
+            # layout.drawer.hide()
             with layout.toolbar:
 
                 # File upload button

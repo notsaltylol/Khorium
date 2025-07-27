@@ -36,6 +36,7 @@ class VtkPipeline:
     def __init__(self):
         # Create renderer, render window, and interactor
         self.renderer = vtkRenderer()
+        self.renderer.SetBackground(1.0, 1.0, 1.0)  # Set background to white
         self.renderWindow = vtkRenderWindow()
         self.renderWindow.AddRenderer(self.renderer)
 
@@ -103,15 +104,9 @@ class VtkPipeline:
         mesh_lut.SetValueRange(1.0, 1.0)
         mesh_lut.Build()
 
-        # Mesh: Color by default array
-        self.mesh_mapper.SelectColorArray(default_array.get("text"))
-        self.mesh_mapper.GetLookupTable().SetRange(self.default_min, self.default_max)
-        if default_array.get("type") == vtkDataObject.FIELD_ASSOCIATION_POINTS:
-            self.mesh_mapper.SetScalarModeToUsePointFieldData()
-        else:
-            self.mesh_mapper.SetScalarModeToUseCellFieldData()
-        self.mesh_mapper.SetScalarVisibility(True)
-        self.mesh_mapper.SetUseLookupTableScalarRange(True)
+        # Mesh: Set solid pastel blue color
+        self.mesh_mapper.SetScalarVisibility(False)  # Disable scalar coloring
+        self.mesh_actor.GetProperty().SetColor(0.7, 0.8, 1.0)  # Pastel blue color
 
         # Contour
         self.contour = vtkContourFilter()
@@ -141,17 +136,9 @@ class VtkPipeline:
         contour_lut.SetValueRange(1.0, 1.0)
         contour_lut.Build()
 
-        # Contour: Color by default array
-        self.contour_mapper.SelectColorArray(default_array.get("text"))
-        self.contour_mapper.GetLookupTable().SetRange(
-            self.default_min, self.default_max
-        )
-        if default_array.get("type") == vtkDataObject.FIELD_ASSOCIATION_POINTS:
-            self.contour_mapper.SetScalarModeToUsePointFieldData()
-        else:
-            self.contour_mapper.SetScalarModeToUseCellFieldData()
-        self.contour_mapper.SetScalarVisibility(True)
-        self.contour_mapper.SetUseLookupTableScalarRange(True)
+        # Contour: Set solid pastel blue color
+        self.contour_mapper.SetScalarVisibility(False)  # Disable scalar coloring
+        self.contour_actor.GetProperty().SetColor(0.7, 0.8, 1.0)  # Pastel blue color
 
         # Cube Axes
         self.cube_axes = vtkCubeAxesActor()
@@ -164,6 +151,23 @@ class VtkPipeline:
         self.cube_axes.SetYLabelFormat("%6.1f")
         self.cube_axes.SetZLabelFormat("%6.1f")
         self.cube_axes.SetFlyModeToOuterEdges()
+        self.cube_axes.SetVisibility(True)  # Ensure axes are visible
+        
+        # Set axes colors to dark gray for visibility against white background
+        self.cube_axes.GetXAxesLinesProperty().SetColor(0.3, 0.3, 0.3)
+        self.cube_axes.GetYAxesLinesProperty().SetColor(0.3, 0.3, 0.3)
+        self.cube_axes.GetZAxesLinesProperty().SetColor(0.3, 0.3, 0.3)
+        self.cube_axes.GetXAxesGridlinesProperty().SetColor(0.5, 0.5, 0.5)
+        self.cube_axes.GetYAxesGridlinesProperty().SetColor(0.5, 0.5, 0.5)
+        self.cube_axes.GetZAxesGridlinesProperty().SetColor(0.5, 0.5, 0.5)
+        
+        # Set label colors to dark for visibility
+        self.cube_axes.SetXAxisLabelVisibility(True)
+        self.cube_axes.SetYAxisLabelVisibility(True)
+        self.cube_axes.SetZAxisLabelVisibility(True)
+        self.cube_axes.SetXAxisVisibility(True)
+        self.cube_axes.SetYAxisVisibility(True)
+        self.cube_axes.SetZAxisVisibility(True)
 
         self.renderer.ResetCamera()
 
