@@ -49,6 +49,12 @@ class VtkPipeline:
         self.generated_mesh_mapper = None
         self.generated_mesh_actor = None
         self.has_generated_mesh = False
+        
+        # Track default fallback mesh
+        self.default_mesh_reader = None
+        self.default_mesh_mapper = None
+        self.default_mesh_actor = None
+        self.has_default_mesh = False
 
         # Read Data
         initial_file = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
@@ -170,6 +176,9 @@ class VtkPipeline:
         self.cube_axes.SetZAxisVisibility(True)
 
         self.renderer.ResetCamera()
+        
+        # Load default fallback mesh
+        self._load_default_mesh()
 
     def _setup_default_pipeline(self):
         """Setup a minimal pipeline when VTK file cannot be read"""
@@ -195,6 +204,45 @@ class VtkPipeline:
         self.contour_value = 0.5
 
         self.renderer.ResetCamera()
+    
+    def _load_default_mesh(self):
+        """Load default fallback mesh (cad_000_mesh.vtk)"""
+        default_mesh_path = os.path.join(CURRENT_DIRECTORY, "cad_000_mesh.vtk")
+        
+        if not os.path.exists(default_mesh_path):
+            print(f">>> VTK Pipeline: Default mesh file not found: {default_mesh_path}")
+            return False
+            
+        print(f">>> VTK Pipeline: Loading default mesh from {default_mesh_path}")
+        
+        try:
+            # Create mesh reader and pipeline
+            self.default_mesh_reader = self._create_reader(default_mesh_path)
+            self.default_mesh_mapper = vtkDataSetMapper()
+            self.default_mesh_actor = vtkActor()
+            self.default_mesh_actor.SetMapper(self.default_mesh_mapper)
+            
+            # Update reader with file
+            self.default_mesh_reader.SetFileName(default_mesh_path)
+            self.default_mesh_reader.Update()
+            self.default_mesh_mapper.SetInputConnection(self.default_mesh_reader.GetOutputPort())
+            
+            # Style the mesh (wireframe with green color to differentiate from generated mesh)
+            self.default_mesh_actor.GetProperty().SetRepresentationToWireframe()
+            self.default_mesh_actor.GetProperty().SetColor(0.0, 1.0, 0.0)  # Green color
+            self.default_mesh_actor.GetProperty().SetLineWidth(2)
+            
+            # Add to renderer but keep hidden initially
+            self.renderer.AddActor(self.default_mesh_actor)
+            self.default_mesh_actor.SetVisibility(False)
+            
+            self.has_default_mesh = True
+            print(">>> VTK Pipeline: Default mesh loaded successfully")
+            return True
+            
+        except Exception as e:
+            print(f">>> VTK Pipeline: Error loading default mesh: {e}")
+            return False
 
     def load_file(self, file_path, is_generated_mesh=False):
         """Load a new VTU or VTK file and update the pipeline"""
@@ -329,6 +377,11 @@ class VtkPipeline:
             self.generated_mesh_reader.Update()
             self.generated_mesh_mapper.SetInputConnection(self.generated_mesh_reader.GetOutputPort())
             self.has_generated_mesh = True
+            
+            # Hide default mesh when generated mesh is loaded
+            if self.has_default_mesh and self.default_mesh_actor:
+                self.default_mesh_actor.SetVisibility(False)
+                
             print(">>> VTK Pipeline: Generated mesh loaded successfully")
             return True
         except Exception as e:
@@ -336,13 +389,21 @@ class VtkPipeline:
             return False
     
     def set_mesh_visibility(self, visible):
-        """Toggle visibility of generated mesh"""
+        """Toggle visibility of generated mesh, fallback to default mesh if generated mesh doesn't exist"""
         if self.has_generated_mesh and self.generated_mesh_actor:
+            # Show/hide generated mesh
             self.generated_mesh_actor.SetVisibility(visible)
-            print(f">>> VTK Pipeline: Mesh visibility set to {visible}")
+            # Ensure default mesh is hidden when showing generated mesh
+            if visible and self.has_default_mesh and self.default_mesh_actor:
+                self.default_mesh_actor.SetVisibility(False)
+            print(f">>> VTK Pipeline: Generated mesh visibility set to {visible}")
+        elif self.has_default_mesh and self.default_mesh_actor:
+            # Fallback to default mesh
+            self.default_mesh_actor.SetVisibility(visible)
+            print(f">>> VTK Pipeline: Default mesh visibility set to {visible} (fallback)")
         else:
-            print(">>> VTK Pipeline: No generated mesh to toggle")
+            print(">>> VTK Pipeline: No mesh available to toggle")
             
     def has_mesh(self):
-        """Check if generated mesh is available"""
-        return self.has_generated_mesh
+        """Check if any mesh (generated or default) is available"""
+        return self.has_generated_mesh or self.has_default_mesh
