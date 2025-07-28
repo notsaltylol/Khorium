@@ -8,7 +8,7 @@ from trame.app import get_server
 from trame.app.file_upload import ClientFile
 from trame.decorators import TrameApp, change, controller
 from trame.ui.vuetify3 import SinglePageLayout
-from trame.widgets import html, vtk, vuetify3
+from trame.widgets import html, vtk, vuetify3, iframe
 
 from khorium.app.core.constants import CURRENT_DIRECTORY
 from khorium.app.core.vtk_pipeline import VtkPipeline
@@ -33,6 +33,12 @@ class MyTrameApp:
         self.state.trame__title = "Khorium"
         self.state.resolution = 6
         self.state.show_mesh = False  # Toggle for showing generated mesh
+        self.state.mesh_color = "blue"
+        self.state.representation_mode = "surface"
+        
+        # Register state change handlers
+        self.state.change("show_mesh")(self.on_show_mesh_change)
+        self.ctrl.trigger("hello")(self.hello)
 
     @property
     def state(self):
@@ -46,9 +52,55 @@ class MyTrameApp:
     def reset_resolution(self):
         self.state.resolution = 6
 
+    @controller.set("reset_camera")
+    def reset_camera(self):
+        """Reset camera view"""
+        if hasattr(self.ctrl, "view_reset_camera"):
+            self.ctrl.view_reset_camera()
+
+    @controller.set("fit_to_window")
+    def fit_to_window(self):
+        """Fit view to window"""
+        if hasattr(self.ctrl, "view_reset_camera"):
+            self.ctrl.view_reset_camera()
+
+    @controller.set("hello")
+    def hello(self):
+        return "hiiiii"
+
     @change("resolution")
     def on_resolution_change(self, resolution, **_kwargs):
         print(f">>> ENGINE(a): Slider updating resolution to {resolution}")
+
+    @change("mesh_color")
+    def on_mesh_color_change(self, mesh_color, **_kwargs):
+        print(f">>> ENGINE(a): Updating mesh color to {mesh_color}")
+        self._update_mesh_color(mesh_color)
+        if hasattr(self.ctrl, "view_update"):
+            self.ctrl.view_update()
+
+    @change("representation_mode")
+    def on_representation_mode_change(self, representation_mode, **_kwargs):
+        print(f">>> ENGINE(a): Updating representation mode to {representation_mode}")
+        self._update_representation_mode(representation_mode)
+        if hasattr(self.ctrl, "view_update"):
+            self.ctrl.view_update()
+
+    @change("show_mesh")  
+    def on_show_mesh_change(self, show_mesh, **_kwargs):
+        print(f">>> ENGINE(a): [DEBUG] show_mesh state changed to: {show_mesh}")
+        print(f">>> ENGINE(a): [DEBUG] Has generated mesh: {self.vtk_pipeline.has_generated_mesh}")
+        print(f">>> ENGINE(a): [DEBUG] Has default mesh: {self.vtk_pipeline.has_default_mesh}")
+        
+        # Update VTK pipeline to show/hide mesh
+        self.vtk_pipeline.set_mesh_visibility(show_mesh)
+        
+        # Update the view
+        if hasattr(self.ctrl, "view_update"):
+            self.ctrl.view_update()
+            print(f">>> ENGINE(a): [DEBUG] View updated after mesh visibility change")
+        else:
+            print(f">>> ENGINE(a): [DEBUG] Warning: view_update not available")
 
     @controller.set("widget_click")
     def widget_click(self):
@@ -109,16 +161,10 @@ class MyTrameApp:
 
     @controller.set("toggle_mesh")
     def toggle_mesh(self):
-        """Toggle visibility of generated mesh"""
-        show_mesh = self.state.show_mesh
-        print(f">>> ENGINE(a): Toggling mesh visibility to: {show_mesh}")
-        
-        # Update VTK pipeline to show/hide mesh
-        self.vtk_pipeline.set_mesh_visibility(show_mesh)
-        
-        # Update the view
-        if hasattr(self.ctrl, "view_update"):
-            self.ctrl.view_update()
+        """Toggle visibility of generated mesh (legacy controller method)"""
+        # The actual work is now done in on_show_mesh_change via @change decorator
+        # This method just toggles the state, which will trigger the change handler
+        self.state.show_mesh = not self.state.show_mesh
 
     @controller.set("upload_file")
     def upload_file(self, files):
@@ -215,6 +261,56 @@ class MyTrameApp:
         else:
             print(">>> ENGINE(a): Failed to load uploaded VTU file - file may be corrupted")
 
+    def _update_mesh_color(self, color):
+        """Update mesh color based on string value"""
+        color_map = {
+            "blue": (0.7, 0.8, 1.0),
+            "red": (1.0, 0.3, 0.3),
+            "green": (0.3, 1.0, 0.3),
+            "white": (1.0, 1.0, 1.0)
+        }
+        
+        rgb = color_map.get(color, (0.7, 0.8, 1.0))  # Default to blue
+        
+        # Update main mesh actor
+        self.vtk_pipeline.mesh_actor.GetProperty().SetColor(*rgb)
+        
+        # Update generated mesh actor if it exists
+        if self.vtk_pipeline.has_generated_mesh and self.vtk_pipeline.generated_mesh_actor:
+            self.vtk_pipeline.generated_mesh_actor.GetProperty().SetColor(*rgb)
+            
+        # Update default mesh actor if it exists
+        if self.vtk_pipeline.has_default_mesh and self.vtk_pipeline.default_mesh_actor:
+            self.vtk_pipeline.default_mesh_actor.GetProperty().SetColor(*rgb)
+            
+    def _update_representation_mode(self, mode):
+        """Update mesh representation mode"""
+        # Update main mesh actor
+        if mode == "surface":
+            self.vtk_pipeline.mesh_actor.GetProperty().SetRepresentationToSurface()
+        elif mode == "wireframe":
+            self.vtk_pipeline.mesh_actor.GetProperty().SetRepresentationToWireframe()
+        elif mode == "points":
+            self.vtk_pipeline.mesh_actor.GetProperty().SetRepresentationToPoints()
+            
+        # Update generated mesh actor if it exists
+        if self.vtk_pipeline.has_generated_mesh and self.vtk_pipeline.generated_mesh_actor:
+            if mode == "surface":
+                self.vtk_pipeline.generated_mesh_actor.GetProperty().SetRepresentationToSurface()
+            elif mode == "wireframe":
+                self.vtk_pipeline.generated_mesh_actor.GetProperty().SetRepresentationToWireframe()
+            elif mode == "points":
+                self.vtk_pipeline.generated_mesh_actor.GetProperty().SetRepresentationToPoints()
+                
+        # Update default mesh actor if it exists
+        if self.vtk_pipeline.has_default_mesh and self.vtk_pipeline.default_mesh_actor:
+            if mode == "surface":
+                self.vtk_pipeline.default_mesh_actor.GetProperty().SetRepresentationToSurface()
+            elif mode == "wireframe":
+                self.vtk_pipeline.default_mesh_actor.GetProperty().SetRepresentationToWireframe()
+            elif mode == "points":
+                self.vtk_pipeline.default_mesh_actor.GetProperty().SetRepresentationToPoints()
+
     def _build_ui(self, *_args, **_kwargs):
         with SinglePageLayout(self.server) as layout:
             # Hide title and drawer
@@ -255,120 +351,24 @@ class MyTrameApp:
                 
                 vuetify3.VSpacer()
 
-                # my_widgets.CustomWidget(
-                #     attribute_name="Hello",
-                #     py_attr_name="World",
-                #     click=self.ctrl.widget_click,
-                #     change=self.ctrl.widget_change,
-                # )
-                # vuetify3.VSpacer()
-                # vuetify3.VSlider(                    # Add slider
-                #     v_model=("resolution", 6),      # bind variable with an initial value of 6
-                #     min=3, max=60, step=1,          # slider range
-                #     dense=True, hide_details=True,  # presentation setup
-                # )
-                # with vuetify3.VBtn(icon=True, click=self.ctrl.reset_camera):
-                #     vuetify3.VIcon("mdi-crop-free")
-                # with vuetify3.VBtn(icon=True, click=self.reset_resolution):
-                #     vuetify3.VIcon("mdi-undo")
-
-            # with layout.drawer as drawer:
-            #     # drawer components
-            #     drawer.width = 325
-            #     def actives_change(ids):
-            #         _id = ids[0]
-            #         if _id == "1":  # Mesh
-            #             self.state.active_ui = "mesh"
-            #         elif _id == "2":  # Contour
-            #             self.state.active_ui = "contour"
-            #         else:
-            #             self.state.active_ui = "nothing"
-            #     def visibility_change(event):
-            #         _id = event["id"]
-            #         _visibility = event["visible"]
-
-            #         if _id == "1":  # Mesh
-            #             self.vtk_pipeline.mesh_actor.SetVisibility(_visibility)
-            #         elif _id == "2":  # Contour
-            #             self.vtk_pipeline.contour_actor.SetVisibility(_visibility)
-            #         self.ctrl.view_update()
-            #     trame.GitTree(
-            #         sources=(
-            #             "pipeline",
-            #             [
-            #                 {"id": "1", "parent": "0", "visible": 1, "name": "Mesh"},
-            #                 {"id": "2", "parent": "1", "visible": 1, "name": "Contour"},
-            #             ],
-            #         ),
-            #         actives_change=(actives_change, "[$event]"),
-            #         visibility_change=(visibility_change, "[$event]"),
-            #     )
-            #     vuetify3.VDivider(classes="mb-2")
-            #     mesh_card(dataset_arrays=self.vtk_pipeline.dataset_arrays)
-            #     contour_card(
-            #         dataset_arrays=self.vtk_pipeline.dataset_arrays,
-            #         contour_value=self.vtk_pipeline.contour_value,
-            #         default_min=self.vtk_pipeline.default_min,
-            #         default_max=self.vtk_pipeline.default_max,
-            #     )
-
-            # Main content
-            # with layout.content:
-            #     with vuetify3.VContainer(fluid=True, classes="pa-0 fill-height"):
-            #         with vtk.VtkLocalView() as vtk_view:                # vtk.js view for local rendering
-            #             self.ctrl.reset_camera = vtk_view.reset_camera  # Bind method to controller
-            #             with vtk.VtkGeometryRepresentation():      # Add representation to vtk.js view
-            #                 vtk.VtkAlgorithm(                      # Add ConeSource to representation
-            #                     vtk_class="vtkConeSource",          # Set attribute value with no JS eval
-            #                     state=("{ resolution }",)          # Set attribute value with JS eval
-            #                 )
-
             with layout.content:
+                # Enable iframe communication for React frontend at the top level
+                print(">>> ENGINE(a): [DEBUG] Setting up iframe.Communicator at layout level")
+                iframe.Communicator(
+                    target_origin="http://localhost:3000", 
+                    enable_rpc=True,
+                    retry_connection=True,
+                    retry_interval=500,  # 0.5 seconds
+                    max_retries=10
+                )
+                print(">>> ENGINE(a): [DEBUG] iframe.Communicator setup complete")
+                
                 # content components
                 with vuetify3.VContainer(
                     fluid=True,
                     classes="pa-0 fill-height",
                 ):
                     with vuetify3.VRow(classes="fill-height ma-0"):
-                        # with vuetify3.VCol(classes="pa-0 fill-height max-width-325"):
-                        #     # drawer components
-                        #     # drawer.width = 325
-                        #     def actives_change(ids):
-                        #         _id = ids[0]
-                        #         if _id == "1":  # Mesh
-                        #             self.state.active_ui = "mesh"
-                        #         elif _id == "2":  # Contour
-                        #             self.state.active_ui = "contour"
-                        #         else:
-                        #             self.state.active_ui = "nothing"
-                        # def visibility_change(event):
-                        #     _id = event["id"]
-                        #     _visibility = event["visible"]
-
-                        #     if _id == "1":  # Mesh
-                        #         self.vtk_pipeline.mesh_actor.SetVisibility(_visibility)
-                        #     elif _id == "2":  # Contour
-                        #         self.vtk_pipeline.contour_actor.SetVisibility(_visibility)
-                        #     self.ctrl.view_update()
-                        # trame.GitTree(
-                        #     sources=(
-                        #         "pipeline",
-                        #         [
-                        #             {"id": "1", "parent": "0", "visible": 1, "name": "Mesh"},
-                        #             {"id": "2", "parent": "1", "visible": 1, "name": "Contour"},
-                        #         ],
-                        #     ),
-                        #     actives_change=(actives_change, "[$event]"),
-                        #     visibility_change=(visibility_change, "[$event]"),
-                        # )
-                        # vuetify3.VDivider(classes="mb-2")
-                        # mesh_card(dataset_arrays=self.vtk_pipeline.dataset_arrays)
-                        # contour_card(
-                        #     dataset_arrays=self.vtk_pipeline.dataset_arrays,
-                        #     contour_value=self.vtk_pipeline.contour_value,
-                        #     default_min=self.vtk_pipeline.default_min,
-                        #     default_max=self.vtk_pipeline.default_max,
-                        # )
                         with vuetify3.VCol(fluid=True, classes="pa-0 fill-height"):
                             # view = vtk.VtkRemoteView(renderWindow, interactive_ratio=1)
                             # view = vtk.VtkLocalView(renderWindow)

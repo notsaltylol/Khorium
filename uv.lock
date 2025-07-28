@@ -1483,6 +1483,7 @@ dependencies = [
     { name = "requests" },
     { name = "trame" },
     { name = "trame-components" },
+    { name = "trame-iframe" },
     { name = "trame-vtk" },
     { name = "trame-vuetify" },
     { name = "vtk" },
@@ -1517,6 +1518,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "trame", specifier = ">=3.7.1" },
     { name = "trame-components", specifier = ">=2.5.0" },
+    { name = "trame-iframe", specifier = ">=1.1.1" },
     { name = "trame-vtk" },
     { name = "trame-vuetify" },
     { name = "vtk", specifier = ">=9.5.0" },
@@ -3598,6 +3600,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/82/47/d773f35615c22553a7547b4336af62e412548ec3607626fa3db128f30460/trame-components-2.5.0.tar.gz", hash = "sha256:df7a1d387b98c5dd71699737804f5288957ca370eb1a60bbe40e89a1f9f62b12", size = 81972, upload-time = "2025-05-30T14:21:36.718Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/02/e9/627ebbf56e00d80300940e8bbf54c6594f98fd214e3565b3abaa5450e0d4/trame_components-2.5.0-py3-none-any.whl", hash = "sha256:897a6c0ebcc72d95a461bde28d2c2e37c4bc4922013ad07df3a65e64d4884672", size = 82345, upload-time = "2025-05-30T14:21:35.526Z" },
+]
+
+[[package]]
+name = "trame-iframe"
+version = "1.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "trame-client" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f8/d4/494148fc0a389b05c0c2503e0720080dc3577d0fb85239f411aed9ae9965/trame-iframe-1.1.1.tar.gz", hash = "sha256:308901f989832ebb6b3f12c210a55bce5b7fe9dd1e11040b780e341478ef9707", size = 7187, upload-time = "2024-12-13T15:43:03.696Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/06/ba9e89e4872ba1ad4338b58eadea2f9b729a9343904cd403b46cb33790a6/trame_iframe-1.1.1-py3-none-any.whl", hash = "sha256:6bb9c4ff29f36e2dd124834c5214b16193d813330a47a9120fcf0ecde600335b", size = 8490, upload-time = "2024-12-13T15:43:02.149Z" },
 ]
 
 [[package]]

@@ -390,19 +390,28 @@ class VtkPipeline:
     
     def set_mesh_visibility(self, visible):
         """Toggle visibility of generated mesh, fallback to default mesh if generated mesh doesn't exist"""
+        print(f">>> VTK Pipeline: [DEBUG] set_mesh_visibility called with visible={visible}")
+        print(f">>> VTK Pipeline: [DEBUG] has_generated_mesh={self.has_generated_mesh}, has_default_mesh={self.has_default_mesh}")
+        
         if self.has_generated_mesh and self.generated_mesh_actor:
             # Show/hide generated mesh
             self.generated_mesh_actor.SetVisibility(visible)
+            current_visibility = self.generated_mesh_actor.GetVisibility()
+            print(f">>> VTK Pipeline: [DEBUG] Generated mesh actor visibility set to {visible}, current={current_visibility}")
+            
             # Ensure default mesh is hidden when showing generated mesh
             if visible and self.has_default_mesh and self.default_mesh_actor:
                 self.default_mesh_actor.SetVisibility(False)
+                print(f">>> VTK Pipeline: [DEBUG] Default mesh hidden when showing generated mesh")
             print(f">>> VTK Pipeline: Generated mesh visibility set to {visible}")
         elif self.has_default_mesh and self.default_mesh_actor:
             # Fallback to default mesh
             self.default_mesh_actor.SetVisibility(visible)
+            current_visibility = self.default_mesh_actor.GetVisibility()
+            print(f">>> VTK Pipeline: [DEBUG] Default mesh actor visibility set to {visible}, current={current_visibility}")
             print(f">>> VTK Pipeline: Default mesh visibility set to {visible} (fallback)")
         else:
-            print(">>> VTK Pipeline: No mesh available to toggle")
+            print(">>> VTK Pipeline: [DEBUG] No mesh available to toggle - check if mesh was loaded properly")
             
     def has_mesh(self):
         """Check if any mesh (generated or default) is available"""
