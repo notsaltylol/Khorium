@@ -12,7 +12,7 @@ from trame.widgets import html, vtk, vuetify3, iframe
 
 from khorium.app.core.constants import CURRENT_DIRECTORY
 from khorium.app.core.vtk_pipeline import VtkPipeline
-from khorium.app.config import MESH_GENERATE_API
+from khorium.app.config import FRONTEND_URL, MESH_GENERATE_API
 
 # ---------------------------------------------------------
 # Engine class
@@ -86,7 +86,7 @@ class MyTrameApp:
         if hasattr(self.ctrl, "view_update"):
             self.ctrl.view_update()
 
-    @change("show_mesh")  
+    # @change("show_mesh")  
     def on_show_mesh_change(self, show_mesh, **_kwargs):
         print(f">>> ENGINE(a): [DEBUG] show_mesh state changed to: {show_mesh}")
         print(f">>> ENGINE(a): [DEBUG] Has generated mesh: {self.vtk_pipeline.has_generated_mesh}")
@@ -338,24 +338,13 @@ class MyTrameApp:
                 ):
                     vuetify3.VIcon("mdi-auto-fix", classes="mr-1")
                 
-                # Mesh Toggle Switch
-                with vuetify3.VRow(classes="ma-0 pa-0", dense=True, align="center"):
-                    vuetify3.VLabel("Show Mesh:", classes="mr-2")
-                    vuetify3.VSwitch(
-                        v_model=("show_mesh", False),
-                        hide_details=True,
-                        dense=True,
-                        classes="ma-0",
-                        change=self.ctrl.toggle_mesh
-                    )
-                
                 vuetify3.VSpacer()
 
             with layout.content:
                 # Enable iframe communication for React frontend at the top level
                 print(">>> ENGINE(a): [DEBUG] Setting up iframe.Communicator at layout level")
                 iframe.Communicator(
-                    target_origin="http://localhost:3000", 
+                    target_origin=FRONTEND_URL, 
                     enable_rpc=True,
                     retry_connection=True,
                     retry_interval=500,  # 0.5 seconds
