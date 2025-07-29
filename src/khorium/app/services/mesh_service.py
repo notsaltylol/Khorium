@@ -74,6 +74,10 @@ class MeshService:
         # Update default mesh actor if it exists
         if vtk_pipeline.has_default_mesh and vtk_pipeline.default_mesh_actor:
             vtk_pipeline.default_mesh_actor.GetProperty().SetColor(*rgb)
+            
+        # Update STL mesh actor if it exists
+        if vtk_pipeline.has_stl_mesh and vtk_pipeline.stl_mesh_actor:
+            vtk_pipeline.stl_mesh_actor.GetProperty().SetColor(*rgb)
     
     def update_representation_mode(self, vtk_pipeline, mode: str):
         """Update mesh representation mode"""
@@ -84,6 +88,8 @@ class MeshService:
             actors.append(vtk_pipeline.generated_mesh_actor)
         if vtk_pipeline.has_default_mesh and vtk_pipeline.default_mesh_actor:
             actors.append(vtk_pipeline.default_mesh_actor)
+        if vtk_pipeline.has_stl_mesh and vtk_pipeline.stl_mesh_actor:
+            actors.append(vtk_pipeline.stl_mesh_actor)
         
         # Apply representation to all actors
         for actor in actors:

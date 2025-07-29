@@ -38,8 +38,8 @@ class FileService:
         filename = self._extract_filename(file_helper, file)
         
         # Validate file extension
-        if not filename.lower().endswith(".vtu"):
-            print(f">>> FILE_SERVICE: Invalid file format. Expected .vtu, got: {filename}")
+        if not (filename.lower().endswith(".vtu") or filename.lower().endswith(".stl")):
+            print(f">>> FILE_SERVICE: Invalid file format. Expected .vtu or .stl, got: {filename}")
             return None
 
         # Validate file content
@@ -61,8 +61,11 @@ class FileService:
             print(f">>> FILE_SERVICE: Error saving temporary file: {e}")
             return None
 
-        # Replace the existing cad_000.vtu file
-        target_file_path = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
+        # Determine target file path based on file type
+        if filename.lower().endswith(".stl"):
+            target_file_path = os.path.join(CURRENT_DIRECTORY, "uploaded.stl")
+        else:
+            target_file_path = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
         try:
             shutil.copy2(temp_file_path, target_file_path)
             print(f">>> FILE_SERVICE: Replaced {target_file_path} with uploaded file")
@@ -112,3 +115,11 @@ class FileService:
     def get_current_vtu_file(self) -> str:
         """Get path to current VTU file"""
         return os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
+    
+    def get_uploaded_stl_file(self) -> str:
+        """Get path to uploaded STL file"""
+        return os.path.join(CURRENT_DIRECTORY, "uploaded.stl")
+    
+    def is_stl_file(self, filename: str) -> bool:
+        """Check if filename is an STL file"""
+        return filename.lower().endswith(".stl")

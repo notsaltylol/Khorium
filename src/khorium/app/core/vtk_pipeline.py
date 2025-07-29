@@ -10,6 +10,7 @@ from vtkmodules.vtkFiltersCore import vtkContourFilter
 from vtkmodules.vtkInteractionStyle import vtkInteractorStyleSwitch  # noqa: F401
 from vtkmodules.vtkIOXML import vtkXMLUnstructuredGridReader
 from vtkmodules.vtkIOLegacy import vtkUnstructuredGridReader
+from vtkmodules.vtkIOGeometry import vtkSTLReader
 from vtkmodules.vtkRenderingAnnotation import vtkCubeAxesActor
 from vtkmodules.vtkRenderingCore import (
     vtkActor,
@@ -29,6 +30,8 @@ class VtkPipeline:
             return vtkXMLUnstructuredGridReader()
         elif file_path.lower().endswith('.vtk'):
             return vtkUnstructuredGridReader()
+        elif file_path.lower().endswith('.stl'):
+            return vtkSTLReader()
         else:
             # Default to XML reader
             return vtkXMLUnstructuredGridReader()
@@ -55,6 +58,13 @@ class VtkPipeline:
         self.default_mesh_mapper = None
         self.default_mesh_actor = None
         self.has_default_mesh = False
+        
+        # Track STL mesh actors separately
+        self.stl_mesh_reader = None
+        self.stl_mesh_mapper = None
+        self.stl_mesh_actor = None
+        self.has_stl_mesh = False
+        self.current_stl_file = None
 
         # Read Data
         initial_file = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
@@ -245,14 +255,26 @@ class VtkPipeline:
             return False
 
     def load_file(self, file_path, is_generated_mesh=False):
-        """Load a new VTU or VTK file and update the pipeline"""
-        if is_generated_mesh:
+        """Load a new VTU, VTK, or STL file and update the pipeline"""
+        if file_path.lower().endswith('.stl'):
+            return self._load_stl_file(file_path)
+        elif is_generated_mesh:
             return self._load_generated_mesh(file_path)
         else:
             return self._load_original_data(file_path)
     
     def _load_original_data(self, file_path):
         """Load original VTU data"""
+        # Hide STL mesh if it was previously loaded
+        if self.has_stl_mesh and self.stl_mesh_actor:
+            self.stl_mesh_actor.SetVisibility(False)
+            self.has_stl_mesh = False
+            print(">>> VTK Pipeline: STL mesh hidden for VTU file loading")
+        
+        # Show VTU-based visualization elements
+        self.mesh_actor.SetVisibility(True)
+        self.contour_actor.SetVisibility(True)
+        
         # Create appropriate reader for the file type
         current_reader_type = type(self.reader)
         new_reader = self._create_reader(file_path)
@@ -388,10 +410,70 @@ class VtkPipeline:
             print(f">>> VTK Pipeline: Error loading generated mesh: {e}")
             return False
     
+    def _load_stl_file(self, file_path):
+        """Load STL file and update the pipeline"""
+        print(f">>> VTK Pipeline: Loading STL file from {file_path}")
+        
+        # Create STL mesh reader and pipeline if not exists
+        if self.stl_mesh_reader is None:
+            self.stl_mesh_reader = vtkSTLReader()
+            self.stl_mesh_mapper = vtkDataSetMapper()
+            self.stl_mesh_actor = vtkActor()
+            self.stl_mesh_actor.SetMapper(self.stl_mesh_mapper)
+            
+            # Style the STL mesh with default surface properties
+            self.stl_mesh_actor.GetProperty().SetRepresentationToSurface()
+            self.stl_mesh_actor.GetProperty().SetColor(0.8, 0.8, 0.9)  # Light blue color
+            self.stl_mesh_actor.GetProperty().SetOpacity(1.0)
+            
+            # Add to renderer
+            self.renderer.AddActor(self.stl_mesh_actor)
+        
+        # Update reader with new file
+        self.stl_mesh_reader.SetFileName(file_path)
+        self.stl_mesh_reader.Modified()
+        
+        try:
+            self.stl_mesh_reader.Update()
+            self.stl_mesh_mapper.SetInputConnection(self.stl_mesh_reader.GetOutputPort())
+            
+            # STL files don't have scalar data, so disable scalar coloring
+            self.stl_mesh_mapper.SetScalarVisibility(False)
+            
+            self.has_stl_mesh = True
+            self.current_stl_file = file_path
+            
+            # Hide other mesh types when STL is loaded
+            if self.has_generated_mesh and self.generated_mesh_actor:
+                self.generated_mesh_actor.SetVisibility(False)
+            if self.has_default_mesh and self.default_mesh_actor:
+                self.default_mesh_actor.SetVisibility(False)
+            
+            # Hide VTU-based visualization elements since STL doesn't have scalar fields
+            self.mesh_actor.SetVisibility(False)
+            self.contour_actor.SetVisibility(False)
+            
+            # Update cube axes bounds for STL geometry
+            self.cube_axes.SetBounds(self.stl_mesh_actor.GetBounds())
+            
+            # Reset camera to fit STL data
+            self.renderer.ResetCamera()
+            
+            print(">>> VTK Pipeline: STL file loaded successfully")
+            return True
+        except Exception as e:
+            print(f">>> VTK Pipeline: Error loading STL file: {e}")
+            return False
+    
     def set_mesh_visibility(self, visible):
-        """Toggle visibility of generated mesh, fallback to default mesh if generated mesh doesn't exist"""
+        """Toggle visibility of mesh (generated, default, or STL)"""
         print(f">>> VTK Pipeline: [DEBUG] set_mesh_visibility called with visible={visible}")
-        print(f">>> VTK Pipeline: [DEBUG] has_generated_mesh={self.has_generated_mesh}, has_default_mesh={self.has_default_mesh}")
+        print(f">>> VTK Pipeline: [DEBUG] has_generated_mesh={self.has_generated_mesh}, has_default_mesh={self.has_default_mesh}, has_stl_mesh={self.has_stl_mesh}")
+        
+        # For STL files, the mesh visibility doesn't apply since STL is the primary content
+        if self.has_stl_mesh:
+            print(">>> VTK Pipeline: STL mesh is already visible (no additional mesh to toggle)")
+            return
         
         if self.has_generated_mesh and self.generated_mesh_actor:
             # Show/hide generated mesh
@@ -414,5 +496,5 @@ class VtkPipeline:
             print(">>> VTK Pipeline: [DEBUG] No mesh available to toggle - check if mesh was loaded properly")
             
     def has_mesh(self):
-        """Check if any mesh (generated or default) is available"""
-        return self.has_generated_mesh or self.has_default_mesh
+        """Check if any mesh (generated, default, or STL) is available"""
+        return self.has_generated_mesh or self.has_default_mesh or self.has_stl_mesh

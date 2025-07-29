@@ -14,7 +14,7 @@ class ToolbarComponent:
             vuetify3.VIcon("mdi-upload")
             html.Input(
                 type="file",
-                accept=".vtu",
+                accept=".vtu,.stl",
                 style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;",
                 change=(self.app.ctrl.upload_file, "[$event.target.files]"),
                 __events=["change"],
