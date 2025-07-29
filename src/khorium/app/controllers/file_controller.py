@@ -28,11 +28,15 @@ class FileController:
         
         # Reload VTK pipeline with new file
         if self.app.vtk_pipeline.load_file(target_file_path):
-            # Update the view
+            # Center the camera on all visible actors
+            self.app.vtk_pipeline.center_camera_on_all_actors()
+            
+            # Update the view and ensure proper centering
             if hasattr(self.app.ctrl, "view_update"):
                 self.app.ctrl.view_update()
             if hasattr(self.app.ctrl, "view_reset_camera"):
                 self.app.ctrl.view_reset_camera()
+                print(">>> FILE_CONTROLLER: Camera reset to center the uploaded model")
 
             if is_stl:
                 print(">>> FILE_CONTROLLER: STL file loaded and rendered successfully")

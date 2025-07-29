@@ -185,6 +185,8 @@ class VtkPipeline:
         self.cube_axes.SetYAxisVisibility(True)
         self.cube_axes.SetZAxisVisibility(True)
 
+        # Initial camera setup with proper centering
+        self.renderer.ResetCameraClippingRange()
         self.renderer.ResetCamera()
         
         # Load default fallback mesh
@@ -213,6 +215,7 @@ class VtkPipeline:
         # Set default contour value
         self.contour_value = 0.5
 
+        self.renderer.ResetCameraClippingRange()
         self.renderer.ResetCamera()
     
     def _load_default_mesh(self):
@@ -359,10 +362,14 @@ class VtkPipeline:
                 self.contour_mapper.SetScalarModeToUseCellFieldData()
 
             # Update cube axes bounds
-            self.cube_axes.SetBounds(self.mesh_actor.GetBounds())
+            bounds = self.mesh_actor.GetBounds()
+            self.cube_axes.SetBounds(bounds)
 
-            # Reset camera to fit new data
-            self.renderer.ResetCamera()
+            # Reset camera to fit new data with proper centering
+            self.renderer.ResetCameraClippingRange()
+            self.renderer.ResetCamera(bounds)
+            
+            print(f">>> VTK Pipeline: VTU bounds: {bounds}")
 
             print(
                 f">>> VTK Pipeline: Loaded new file {file_path} with {len(self.dataset_arrays)} arrays"
@@ -456,10 +463,14 @@ class VtkPipeline:
             self.contour_actor.SetVisibility(False)
             
             # Update cube axes bounds for STL geometry
-            self.cube_axes.SetBounds(self.stl_mesh_actor.GetBounds())
+            bounds = self.stl_mesh_actor.GetBounds()
+            self.cube_axes.SetBounds(bounds)
             
-            # Reset camera to fit STL data
-            self.renderer.ResetCamera()
+            # Reset camera to fit STL data with proper centering
+            self.renderer.ResetCameraClippingRange()
+            self.renderer.ResetCamera(bounds)
+            
+            print(f">>> VTK Pipeline: STL bounds: {bounds}")
             
             print(">>> VTK Pipeline: STL file loaded successfully")
             return True
@@ -496,3 +507,58 @@ class VtkPipeline:
     def has_mesh(self):
         """Check if any mesh (generated, default, or STL) is available"""
         return self.has_generated_mesh or self.has_default_mesh or self.has_stl_mesh
+    
+    def center_camera_on_all_actors(self):
+        """Center camera on all visible actors in the scene"""
+        print(">>> VTK Pipeline: Centering camera on all visible actors")
+        
+        # Get bounds of all visible actors
+        all_bounds = [float('inf'), float('-inf'), float('inf'), float('-inf'), float('inf'), float('-inf')]
+        has_visible_actors = False
+        
+        # Check main mesh actor
+        if self.mesh_actor and self.mesh_actor.GetVisibility():
+            bounds = self.mesh_actor.GetBounds()
+            self._update_combined_bounds(all_bounds, bounds)
+            has_visible_actors = True
+            print(f">>> VTK Pipeline: Main mesh bounds: {bounds}")
+        
+        # Check STL mesh actor
+        if self.has_stl_mesh and self.stl_mesh_actor and self.stl_mesh_actor.GetVisibility():
+            bounds = self.stl_mesh_actor.GetBounds()
+            self._update_combined_bounds(all_bounds, bounds)
+            has_visible_actors = True
+            print(f">>> VTK Pipeline: STL mesh bounds: {bounds}")
+        
+        # Check generated mesh actor
+        if self.has_generated_mesh and self.generated_mesh_actor and self.generated_mesh_actor.GetVisibility():
+            bounds = self.generated_mesh_actor.GetBounds()
+            self._update_combined_bounds(all_bounds, bounds)
+            has_visible_actors = True
+            print(f">>> VTK Pipeline: Generated mesh bounds: {bounds}")
+        
+        # Check default mesh actor
+        if self.has_default_mesh and self.default_mesh_actor and self.default_mesh_actor.GetVisibility():
+            bounds = self.default_mesh_actor.GetBounds()
+            self._update_combined_bounds(all_bounds, bounds)
+            has_visible_actors = True
+            print(f">>> VTK Pipeline: Default mesh bounds: {bounds}")
+        
+        if has_visible_actors:
+            print(f">>> VTK Pipeline: Combined bounds: {all_bounds}")
+            self.cube_axes.SetBounds(all_bounds)
+            self.renderer.ResetCameraClippingRange()
+            self.renderer.ResetCamera(all_bounds)
+            print(">>> VTK Pipeline: Camera centered on all visible actors")
+        else:
+            print(">>> VTK Pipeline: No visible actors found for camera centering")
+    
+    def _update_combined_bounds(self, combined_bounds, new_bounds):
+        """Update combined bounds with new bounds"""
+        if new_bounds and len(new_bounds) >= 6:
+            combined_bounds[0] = min(combined_bounds[0], new_bounds[0])  # xmin
+            combined_bounds[1] = max(combined_bounds[1], new_bounds[1])  # xmax
+            combined_bounds[2] = min(combined_bounds[2], new_bounds[2])  # ymin
+            combined_bounds[3] = max(combined_bounds[3], new_bounds[3])  # ymax
+            combined_bounds[4] = min(combined_bounds[4], new_bounds[4])  # zmin  
+            combined_bounds[5] = max(combined_bounds[5], new_bounds[5])  # zmax
