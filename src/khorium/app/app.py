@@ -38,7 +38,6 @@ class MyTrameApp:
         
         # Register state change handlers
         self.state.change("show_mesh")(self.on_show_mesh_change)
-        self.ctrl.trigger("hello")(self.hello)
 
     @property
     def state(self):
@@ -48,45 +47,7 @@ class MyTrameApp:
     def ctrl(self):
         return self.server.controller
 
-    @controller.set("reset_resolution")
-    def reset_resolution(self):
-        self.state.resolution = 6
-
-    @controller.set("reset_camera")
-    def reset_camera(self):
-        """Reset camera view"""
-        if hasattr(self.ctrl, "view_reset_camera"):
-            self.ctrl.view_reset_camera()
-
-    @controller.set("fit_to_window")
-    def fit_to_window(self):
-        """Fit view to window"""
-        if hasattr(self.ctrl, "view_reset_camera"):
-            self.ctrl.view_reset_camera()
-
-    @controller.set("hello")
-    def hello(self):
-        return "hiiiii"
-
-    @change("resolution")
-    def on_resolution_change(self, resolution, **_kwargs):
-        print(f">>> ENGINE(a): Slider updating resolution to {resolution}")
-
-    @change("mesh_color")
-    def on_mesh_color_change(self, mesh_color, **_kwargs):
-        print(f">>> ENGINE(a): Updating mesh color to {mesh_color}")
-        self._update_mesh_color(mesh_color)
-        if hasattr(self.ctrl, "view_update"):
-            self.ctrl.view_update()
-
-    @change("representation_mode")
-    def on_representation_mode_change(self, representation_mode, **_kwargs):
-        print(f">>> ENGINE(a): Updating representation mode to {representation_mode}")
-        self._update_representation_mode(representation_mode)
-        if hasattr(self.ctrl, "view_update"):
-            self.ctrl.view_update()
-
-    # @change("show_mesh")  
+    @change("show_mesh")  
     def on_show_mesh_change(self, show_mesh, **_kwargs):
         print(f">>> ENGINE(a): [DEBUG] show_mesh state changed to: {show_mesh}")
         print(f">>> ENGINE(a): [DEBUG] Has generated mesh: {self.vtk_pipeline.has_generated_mesh}")
@@ -101,14 +62,6 @@ class MyTrameApp:
             print(f">>> ENGINE(a): [DEBUG] View updated after mesh visibility change")
         else:
             print(f">>> ENGINE(a): [DEBUG] Warning: view_update not available")
-
-    @controller.set("widget_click")
-    def widget_click(self):
-        print(">>> ENGINE(a): Widget Click")
-
-    @controller.set("widget_change")
-    def widget_change(self):
-        print(">>> ENGINE(a): Widget Change")
 
     @controller.set("generate_mesh")
     def generate_mesh(self):
