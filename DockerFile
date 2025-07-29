@@ -1,19 +1,24 @@
-ARG BASE_IMAGE=trame-common
-FROM ${BASE_IMAGE}
+FROM kitware/trame:py3.12-uv
 
-ARG PYTHON_VERSION=3.12
+RUN apt-get update && apt-get install -y \
+    libglu1-mesa-dev \
+    libgl1-mesa-dev \
+    libxrandr2 \
+    libxinerama1 \
+    libxcursor1 \
+    libxi6
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Set working directory
+WORKDIR /app
 
-# Copy the uv scripts into place
-COPY scripts/uv/* /opt/trame/
+# Copy dependency files first (for better Docker layer caching)
+COPY pyproject.toml uv.lock ./
 
-# uv config envs
-ENV UV_NO_CACHE=1
-ENV UV_COMPILE_BYTECODE=1
-ENV VIRTUAL_ENV=/deploy/server/venv
+# Install/update dependencies using UV
+RUN uv sync --frozen
 
-# Set venv paths
-ENV TRAME_VENV=$VIRTUAL_ENV
-ENV PV_VENV=$VIRTUAL_ENV
-ENV VTK_VENV=$VIRTUAL_ENV
+# Copy application code
+COPY . .
+
+# Run the Trame application
+CMD ["khorium", "--server"]
