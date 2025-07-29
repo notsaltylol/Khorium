@@ -36,10 +36,7 @@ class MyTrameApp:
 
         # Set state variables
         self.state.trame__title = "Khorium"
-        self.state.resolution = 6
         self.state.show_mesh = False  # Toggle for showing generated mesh
-        self.state.mesh_color = "blue"
-        self.state.representation_mode = "surface"
 
     @property
     def state(self):
