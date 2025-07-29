@@ -1020,6 +1020,17 @@ wheels = [
 ]
 
 [[package]]
+name = "gmsh"
+version = "4.14.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/73/53/123452152d6af64a57c59bef8efa5f8f7e85a44c4f659d5e664074ae5ca8/gmsh-4.14.0-py2.py3-none-macosx_10_15_x86_64.whl", hash = "sha256:e2530364aa132c1cbe352871103a281dbfcf21b7daa7c42e8a07f397ad7eb999", size = 40126084, upload-time = "2025-07-03T09:25:11.614Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/bc/3af8c9fc986f00a0013f02189acd872d68cd40a86969437d36eabbf92234/gmsh-4.14.0-py2.py3-none-macosx_12_0_arm64.whl", hash = "sha256:15e216632292d1daf40e979e4e55317a2b7406ba751ce3410ab9e0137aa0a6dc", size = 36373459, upload-time = "2025-07-03T09:25:16.551Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/73/97b730faa9e8f345629f89b57a1c0fe823bc041fadacc0491c80adead6d1/gmsh-4.14.0-py2.py3-none-manylinux_2_24_x86_64.whl", hash = "sha256:aa39fe49bfea01cd753f5e30d679a5fbfa7315c9297e716393fc0fdc7977e609", size = 39962495, upload-time = "2025-07-03T09:25:20.857Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/0c/465fdd9bb79626bdcae74e134153ef3dec8eccda1c701e0712e425cbecc5/gmsh-4.14.0-py2.py3-none-win_amd64.whl", hash = "sha256:d96a4ae8b36bf8d2a3fa93aa7fe60341e68facfcc257dd37936a05cce216fc52", size = 42180522, upload-time = "2025-07-03T09:25:24.682Z" },
+]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1479,6 +1490,7 @@ name = "khorium"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "gmsh" },
     { name = "pywebview" },
     { name = "requests" },
     { name = "trame" },
@@ -1507,6 +1519,7 @@ jupyter = [
 
 [package.metadata]
 requires-dist = [
+    { name = "gmsh", specifier = ">=4.14.0" },
     { name = "jupyterlab", marker = "extra == 'jupyter'" },
     { name = "nox", marker = "extra == 'dev'" },
     { name = "pre-commit", marker = "extra == 'dev'" },

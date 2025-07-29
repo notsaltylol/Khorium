@@ -15,6 +15,7 @@ dependencies = [
     "watchdog>=6.0.0",
     "requests>=2.32.4",
     "trame-iframe>=1.1.1",
+    "gmsh>=4.14.0",
 ]
 requires-python = ">=3.9"
 readme = "README.rst"

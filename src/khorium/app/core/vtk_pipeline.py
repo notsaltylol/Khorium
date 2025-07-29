@@ -385,7 +385,9 @@ class VtkPipeline:
             # Style the mesh differently (wireframe with different color)
             self.generated_mesh_actor.GetProperty().SetRepresentationToWireframe()
             self.generated_mesh_actor.GetProperty().SetColor(1.0, 0.0, 0.0)  # Red color
-            self.generated_mesh_actor.GetProperty().SetLineWidth(2)
+            self.generated_mesh_actor.GetProperty().SetLineWidth(3)
+            self.generated_mesh_actor.GetProperty().SetOpacity(1.0)  # Ensure full opacity
+            self.generated_mesh_actor.GetProperty().EdgeVisibilityOn()  # Show edges
             
             # Add to renderer but keep hidden initially
             self.renderer.AddActor(self.generated_mesh_actor)
@@ -466,15 +468,11 @@ class VtkPipeline:
             return False
     
     def set_mesh_visibility(self, visible):
-        """Toggle visibility of mesh (generated, default, or STL)"""
+        """Toggle visibility of generated or default mesh"""
         print(f">>> VTK Pipeline: [DEBUG] set_mesh_visibility called with visible={visible}")
         print(f">>> VTK Pipeline: [DEBUG] has_generated_mesh={self.has_generated_mesh}, has_default_mesh={self.has_default_mesh}, has_stl_mesh={self.has_stl_mesh}")
         
-        # For STL files, the mesh visibility doesn't apply since STL is the primary content
-        if self.has_stl_mesh:
-            print(">>> VTK Pipeline: STL mesh is already visible (no additional mesh to toggle)")
-            return
-        
+        # Always try to show/hide generated mesh first (highest priority)
         if self.has_generated_mesh and self.generated_mesh_actor:
             # Show/hide generated mesh
             self.generated_mesh_actor.SetVisibility(visible)
