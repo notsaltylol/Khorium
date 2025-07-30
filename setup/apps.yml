@@ -1,4 +1,2 @@
 trame: # Default app under /index.html
-  www_modules:
-    - khorium.module
   app: khorium
