@@ -6,13 +6,14 @@ def main(server=None, **kwargs):
     
     # Configure server for CORS and iframe support
     default_kwargs = {
-        "port": 10000,
         "host": "0.0.0.0",
         "cors": True,
     }
     default_kwargs.update(kwargs)
     
-    print(f">>> ENGINE: Starting trame server with CORS enabled on {default_kwargs['host']}:{default_kwargs['port']}")
+    # Print startup message for launcher detection
+    print("Starting server...")
+    print(f">>> ENGINE: Starting trame server with CORS enabled on {default_kwargs.get('host', '0.0.0.0')}:{default_kwargs.get('port', 10000)}")
     app.server.start(**default_kwargs)
 
 
