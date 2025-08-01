@@ -10,22 +10,44 @@ class ViewController:
     
     def _register_state_handlers(self):
         """Register state change handlers"""
-        self.app.state.change("show_mesh")(self.on_show_mesh_change)
+        # Register new state manager handlers
+        self.app.state.change("mesh_visible")(self.on_mesh_visible_change)
+        self.app.state.change("mesh_opacity", "mesh_wireframe", "mesh_show_edges")(self.on_mesh_properties_change)
     
-    @change("show_mesh")  
-    def on_show_mesh_change(self, show_mesh, **_kwargs):
-        """Handle mesh visibility state changes"""
-        print(f">>> VIEW_CONTROLLER: [DEBUG] show_mesh state changed to: {show_mesh}")
+    @change("mesh_visible")
+    def on_mesh_visible_change(self, mesh_visible, **_kwargs):
+        """Handle mesh visibility state changes via StateManager"""
+        print(f">>> VIEW_CONTROLLER: [DEBUG] mesh_visible state changed to: {mesh_visible}")
+        self._update_mesh_display()
+    
+    @change("mesh_opacity", "mesh_wireframe", "mesh_show_edges")
+    def on_mesh_properties_change(self, **mesh_props):
+        """Handle mesh property changes"""
+        print(f">>> VIEW_CONTROLLER: [DEBUG] Mesh properties changed: {mesh_props}")
+        self._update_mesh_display()
+    
+    def _update_mesh_display(self):
+        """Update VTK pipeline with current mesh state"""
+        # Get current mesh state
+        mesh_visible = self.app.state_manager.get("mesh_visible", False)
+        mesh_opacity = self.app.state_manager.get("mesh_opacity", 1.0)
+        mesh_wireframe = self.app.state_manager.get("mesh_wireframe", False)
+        
         print(f">>> VIEW_CONTROLLER: [DEBUG] Has generated mesh: {self.app.vtk_pipeline.has_generated_mesh}")
         print(f">>> VIEW_CONTROLLER: [DEBUG] Has default mesh: {self.app.vtk_pipeline.has_default_mesh}")
         
-        # Update VTK pipeline to show/hide mesh
-        self.app.vtk_pipeline.set_mesh_visibility(show_mesh)
+        # Update VTK pipeline
+        self.app.vtk_pipeline.set_mesh_visibility(mesh_visible)
+        
+        # Apply mesh properties if visible
+        if mesh_visible:
+            # TODO: Add methods to VtkPipeline for opacity, wireframe, etc.
+            pass
         
         # Update the view
         if hasattr(self.app.ctrl, "view_update"):
             self.app.ctrl.view_update()
-            print(f">>> VIEW_CONTROLLER: [DEBUG] View updated after mesh visibility change")
+            print(f">>> VIEW_CONTROLLER: [DEBUG] View updated after mesh changes")
         else:
             print(f">>> VIEW_CONTROLLER: [DEBUG] Warning: view_update not available")
     

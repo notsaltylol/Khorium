@@ -2,6 +2,7 @@ from trame.app import get_server
 from trame.decorators import TrameApp
 
 from khorium.app.core.vtk_pipeline import VtkPipeline
+from khorium.app.core.state_manager import StateManager
 from khorium.app.controllers.file_controller import FileController
 from khorium.app.controllers.mesh_controller import MeshController
 from khorium.app.controllers.view_controller import ViewController
@@ -19,6 +20,10 @@ class MyTrameApp:
         self.server = get_server(server, client_type="vue3")
         self.vtk_pipeline = VtkPipeline()
         
+        # Initialize StateManager
+        self.state_manager = StateManager(self.server.state)
+        self.state_manager.initialize_state()
+        
         # Initialize controllers
         self.view_controller = ViewController(self)
         self.file_controller = FileController(self)
@@ -34,9 +39,8 @@ class MyTrameApp:
             
         self.ui = self._build_ui()
 
-        # Set state variables
+        # Set Trame-specific state variables
         self.state.trame__title = "Khorium"
-        self.state.show_mesh = False  # Toggle for showing generated mesh
 
     @property
     def state(self):

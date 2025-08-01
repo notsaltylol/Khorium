@@ -41,12 +41,11 @@ class FileController:
             if is_stl:
                 print(">>> FILE_CONTROLLER: STL file loaded and rendered successfully")
                 # For STL files, we don't use the mesh toggle functionality
-                self.app.state.show_mesh = False
+                self.app.state_manager.show_mesh(False)
             else:
                 print(">>> FILE_CONTROLLER: VTK pipeline reloaded with uploaded VTU file")
                 # Hide any existing generated mesh when new VTU file is uploaded
-                self.app.state.show_mesh = False
-                self.app.vtk_pipeline.set_mesh_visibility(False)
+                self.app.state_manager.show_mesh(False)
             
         else:
             file_type = "STL" if is_stl else "VTU"

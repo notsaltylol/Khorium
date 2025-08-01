@@ -36,10 +36,9 @@ class MeshController:
                 
                 print(">>> MESH_CONTROLLER: GMSH generated mesh loaded successfully")
                 
-                # Show the generated mesh
-                print(">>> MESH_CONTROLLER: Setting show_mesh state to True")
-                self.app.state.show_mesh = True  
-                self.app.vtk_pipeline.set_mesh_visibility(True)
+                # Show the generated mesh using StateManager
+                print(">>> MESH_CONTROLLER: Setting mesh visible via StateManager")
+                self.app.state_manager.show_mesh(True)
                 
                 # Force a render update
                 if hasattr(self.app.ctrl, "view_update"):
@@ -72,10 +71,9 @@ class MeshController:
                 
                 print(">>> MESH_CONTROLLER: Generated mesh loaded successfully")
                 
-                # Show the generated mesh
-                print(">>> MESH_CONTROLLER: Setting show_mesh state to True")
-                self.app.state.show_mesh = True  
-                self.app.vtk_pipeline.set_mesh_visibility(True)
+                # Show the generated mesh using StateManager
+                print(">>> MESH_CONTROLLER: Setting mesh visible via StateManager")
+                self.app.state_manager.show_mesh(True)
                 
                 # Force a render update
                 if hasattr(self.app.ctrl, "view_update"):
