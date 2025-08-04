@@ -12,26 +12,17 @@ class ViewController:
         """Register state change handlers"""
         # Register new state manager handlers
         self.app.state.change("mesh_visible")(self.on_mesh_visible_change)
-        self.app.state.change("mesh_opacity", "mesh_wireframe", "mesh_show_edges")(self.on_mesh_properties_change)
     
     @change("mesh_visible")
-    def on_mesh_visible_change(self, mesh_visible, **_kwargs):
+    def on_mesh_visible_change(self, mesh_visible, **kwargs):
         """Handle mesh visibility state changes via StateManager"""
         print(f">>> VIEW_CONTROLLER: [DEBUG] mesh_visible state changed to: {mesh_visible}")
-        self._update_mesh_display()
-    
-    @change("mesh_opacity", "mesh_wireframe", "mesh_show_edges")
-    def on_mesh_properties_change(self, **mesh_props):
-        """Handle mesh property changes"""
-        print(f">>> VIEW_CONTROLLER: [DEBUG] Mesh properties changed: {mesh_props}")
         self._update_mesh_display()
     
     def _update_mesh_display(self):
         """Update VTK pipeline with current mesh state"""
         # Get current mesh state
         mesh_visible = self.app.state_manager.get("mesh_visible", False)
-        mesh_opacity = self.app.state_manager.get("mesh_opacity", 1.0)
-        mesh_wireframe = self.app.state_manager.get("mesh_wireframe", False)
         
         print(f">>> VIEW_CONTROLLER: [DEBUG] Has generated mesh: {self.app.vtk_pipeline.has_generated_mesh}")
         print(f">>> VIEW_CONTROLLER: [DEBUG] Has default mesh: {self.app.vtk_pipeline.has_default_mesh}")

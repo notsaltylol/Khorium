@@ -311,3 +311,25 @@ class MeshService:
                 actor.GetProperty().SetRepresentationToWireframe()
             elif mode == "points":
                 actor.GetProperty().SetRepresentationToPoints()
+    
+    def set_mesh_size_factor(self, factor: float):
+        """
+        Set the global mesh size factor for GMSH mesh generation
+        
+        Args:
+            factor: Mesh size factor (typically between 0.1 and 10.0)
+                   - Values < 1.0 create finer meshes
+                   - Values > 1.0 create coarser meshes
+                   - Default is 1.0
+        """
+        try:
+            # Clamp factor to reasonable range
+            factor = max(0.01, min(100.0, factor))
+            
+            # Set the global mesh size factor option in GMSH
+            gmsh.option.setNumber("Mesh.MeshSizeFactor", factor)
+            
+            print(f">>> MESH_SERVICE: Mesh size factor set to {factor}")
+            
+        except Exception as e:
+            print(f">>> MESH_SERVICE: Error setting mesh size factor: {e}")

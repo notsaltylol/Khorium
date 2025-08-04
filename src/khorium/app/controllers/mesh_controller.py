@@ -12,6 +12,11 @@ class MeshController:
         self.mesh_service = MeshService()
         self.file_service = FileService()
         self._register_controllers()
+
+    def _register_state_handlers(self):
+        """Register state change handlers"""
+        # Register new state manager handlers
+        self.app.state.change("set_mesh_size_factor")(self.set_mesh_size_factor)
     
     def _register_controllers(self):
         """Register controller methods with Trame"""
@@ -21,6 +26,10 @@ class MeshController:
     def generate_mesh_gmsh(self):
         """Generate mesh from currently loaded 3D model using GMSH"""
         print(">>> MESH_CONTROLLER: GMSH mesh generation started")
+        
+        # Set mesh size factor from state before generating
+        mesh_size_factor = self.app.state_manager.get("mesh_size_factor", 1.0)
+        self.mesh_service.set_mesh_size_factor(mesh_size_factor)
         
         # Generate mesh using GMSH service
         mesh_file_path = self.mesh_service.generate_mesh_with_gmsh(self.app.vtk_pipeline)
@@ -89,3 +98,9 @@ class MeshController:
     def update_representation_mode(self, mode: str):
         """Update mesh representation mode using mesh service"""
         self.mesh_service.update_representation_mode(self.app.vtk_pipeline, mode)
+    
+    @controller.set("set_mesh_size_factor")
+    def set_mesh_size_factor(self, factor: float):
+        """Update mesh size factor in state"""
+        self.app.state_manager.set_mesh_size_factor(factor)
+        print(f">>> MESH_CONTROLLER: Mesh size factor updated to {factor}")
