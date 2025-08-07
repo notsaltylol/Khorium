@@ -15,6 +15,17 @@ class StateManager:
             # Mesh state
             "mesh_visible": False,
             "mesh_size_factor": 1.0,
+            
+            # Mesh code execution state
+            "execute_mesh_code": "",  # Code to execute via state change
+            "mesh_code_current": "",
+            "mesh_code_status": "idle",  # idle, running, completed, failed
+            "mesh_code_error_message": "",
+            "mesh_code_execution_start_time": None,
+            "mesh_code_execution_end_time": None,
+            "mesh_code_execution_duration": 0.0,
+            "mesh_code_execution_complete": False,
+            "mesh_code_result": {},
         }
     
     def _get_state_validators(self) -> Dict[str, callable]:
@@ -89,3 +100,83 @@ class StateManager:
     def set_mesh_size_factor(self, factor: float):
         """Set mesh size factor for mesh generation"""
         self.set("mesh_size_factor", factor)
+    
+    # Mesh code execution convenience methods
+    def set_mesh_code_execution_state(self, code: str, status: str, error_message: str = "",
+                                     start_time: float = None, end_time: float = None,
+                                     duration: float = 0.0, complete: bool = False,
+                                     result: Dict = None):
+        """Set comprehensive mesh code execution state"""
+        updates = {
+            "mesh_code_current": code,
+            "mesh_code_status": status,
+            "mesh_code_error_message": error_message,
+            "mesh_code_execution_duration": duration,
+            "mesh_code_execution_complete": complete,
+        }
+        
+        if start_time is not None:
+            updates["mesh_code_execution_start_time"] = start_time
+        if end_time is not None:
+            updates["mesh_code_execution_end_time"] = end_time
+        if result is not None:
+            updates["mesh_code_result"] = result
+            
+        self.set_multiple(updates)
+    
+    def start_mesh_code_execution(self, code: str):
+        """Mark start of mesh code execution"""
+        import time
+        self.set_multiple({
+            "mesh_code_current": code,
+            "mesh_code_status": "running",
+            "mesh_code_error_message": "",
+            "mesh_code_execution_start_time": time.time(),
+            "mesh_code_execution_complete": False,
+        })
+    
+    def complete_mesh_code_execution(self, success: bool, result: Dict, error_message: str = ""):
+        """Mark completion of mesh code execution"""
+        import time
+        end_time = time.time()
+        start_time = self.get("mesh_code_execution_start_time", end_time)
+        duration = end_time - start_time
+        
+        self.set_multiple({
+            "mesh_code_status": "completed" if success else "failed",
+            "mesh_code_error_message": error_message,
+            "mesh_code_execution_end_time": end_time,
+            "mesh_code_execution_duration": duration,
+            "mesh_code_execution_complete": True,
+            "mesh_code_result": result,
+        })
+    
+    def clear_mesh_code_execution(self):
+        """Clear mesh code execution state"""
+        self.set_multiple({
+            "mesh_code_current": "",
+            "mesh_code_status": "idle",
+            "mesh_code_error_message": "",
+            "mesh_code_execution_start_time": None,
+            "mesh_code_execution_end_time": None,
+            "mesh_code_execution_duration": 0.0,
+            "mesh_code_execution_complete": False,
+            "mesh_code_result": {},
+        })
+    
+    def is_mesh_code_running(self) -> bool:
+        """Check if mesh code is currently executing"""
+        return self.get("mesh_code_status") == "running"
+    
+    def get_mesh_code_execution_summary(self) -> Dict[str, Any]:
+        """Get summary of current mesh code execution state"""
+        return {
+            "current_code": self.get("mesh_code_current", ""),
+            "status": self.get("mesh_code_status", "idle"),
+            "error_message": self.get("mesh_code_error_message", ""),
+            "execution_complete": self.get("mesh_code_execution_complete", False),
+            "execution_duration": self.get("mesh_code_execution_duration", 0.0),
+            "start_time": self.get("mesh_code_execution_start_time"),
+            "end_time": self.get("mesh_code_execution_end_time"),
+            "result": self.get("mesh_code_result", {}),
+        }

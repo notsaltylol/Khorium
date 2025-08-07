@@ -17,6 +17,8 @@ dependencies = [
     "trame-iframe>=1.1.1",
     "gmsh>=4.14.0",
     "dotenv>=0.9.9",
+    "pydantic>=2.11.7",
+    "pytest>=8.4.1",
 ]
 requires-python = ">=3.9"
 readme = "README.rst"

@@ -12,6 +12,10 @@ class ViewController:
         """Register state change handlers"""
         # Register new state manager handlers
         self.app.state.change("mesh_visible")(self.on_mesh_visible_change)
+        
+        # Register mesh code execution state handlers
+        self.app.state.change("mesh_code_status")(self.on_mesh_code_status_change)
+        self.app.state.change("mesh_code_error_message")(self.on_mesh_code_error_change)
     
     @change("mesh_visible")
     def on_mesh_visible_change(self, mesh_visible, **kwargs):
@@ -42,6 +46,35 @@ class ViewController:
         else:
             print(f">>> VIEW_CONTROLLER: [DEBUG] Warning: view_update not available")
     
+    @change("mesh_code_status")
+    def on_mesh_code_status_change(self, mesh_code_status, **kwargs):
+        """Handle mesh code execution status changes"""
+        print(f">>> VIEW_CONTROLLER: [DEBUG] mesh_code_status changed to: {mesh_code_status}")
+        
+        # Get current execution state
+        current_code = self.app.state_manager.get("mesh_code_current", "")
+        error_message = self.app.state_manager.get("mesh_code_error_message", "")
+        execution_time = self.app.state_manager.get("mesh_code_execution_duration", 0.0)
+        
+        # Log execution state change
+        if mesh_code_status == "running":
+            print(f">>> VIEW_CONTROLLER: [DEBUG] Started executing code ({len(current_code)} chars)")
+        elif mesh_code_status == "completed":
+            print(f">>> VIEW_CONTROLLER: [DEBUG] Code execution completed successfully in {execution_time:.2f}s")
+            # Trigger view update if mesh-related code was executed
+            if any(keyword in current_code.lower() for keyword in ['mesh', 'vtk', 'generate', 'load', 'update']):
+                print(">>> VIEW_CONTROLLER: [DEBUG] Mesh-related code executed, triggering view update")
+                if hasattr(self.app.ctrl, "view_update"):
+                    self.app.ctrl.view_update()
+        elif mesh_code_status == "failed":
+            print(f">>> VIEW_CONTROLLER: [DEBUG] Code execution failed: {error_message}")
+    
+    @change("mesh_code_error_message")
+    def on_mesh_code_error_change(self, mesh_code_error_message, **kwargs):
+        """Handle mesh code execution error message changes"""
+        if mesh_code_error_message:
+            print(f">>> VIEW_CONTROLLER: [DEBUG] mesh_code_error_message updated: {mesh_code_error_message}")
+
     def setup_view_controllers(self, view):
         """Setup view-related controller methods"""
         self.app.ctrl.view_update = view.update
