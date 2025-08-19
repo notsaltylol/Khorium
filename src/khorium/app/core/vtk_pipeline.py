@@ -67,39 +67,45 @@ class VtkPipeline:
         self.current_stl_file = None
 
         # Read Data
-        initial_file = os.path.join(CURRENT_DIRECTORY, "cad_000.vtu")
+        initial_file = os.path.join(CURRENT_DIRECTORY, "blade.stl")
         self.reader = self._create_reader(initial_file)
         self.reader.SetFileName(initial_file)
         self.reader.Update()
 
         # Extract Array/Field information
         self.dataset_arrays = []
-        fields = [
-            (
-                self.reader.GetOutput().GetPointData(),
-                vtkDataObject.FIELD_ASSOCIATION_POINTS,
-            ),
-            (
-                self.reader.GetOutput().GetCellData(),
-                vtkDataObject.FIELD_ASSOCIATION_CELLS,
-            ),
-        ]
-        for field in fields:
-            field_arrays, association = field
-            for i in range(field_arrays.GetNumberOfArrays()):
-                array = field_arrays.GetArray(i)
-                array_range = array.GetRange()
-                self.dataset_arrays.append(
-                    {
-                        "text": array.GetName(),
-                        "value": i,
-                        "range": list(array_range),
-                        "type": association,
-                    }
-                )
+        if not initial_file.lower().endswith('.stl'):
+            fields = [
+                (
+                    self.reader.GetOutput().GetPointData(),
+                    vtkDataObject.FIELD_ASSOCIATION_POINTS,
+                ),
+                (
+                    self.reader.GetOutput().GetCellData(),
+                    vtkDataObject.FIELD_ASSOCIATION_CELLS,
+                ),
+            ]
+            for field in fields:
+                field_arrays, association = field
+                for i in range(field_arrays.GetNumberOfArrays()):
+                    array = field_arrays.GetArray(i)
+                    array_range = array.GetRange()
+                    self.dataset_arrays.append(
+                        {
+                            "text": array.GetName(),
+                            "value": i,
+                            "range": list(array_range),
+                            "type": association,
+                        }
+                    )
 
-        default_array = self.dataset_arrays[0]
-        self.default_min, self.default_max = default_array.get("range")
+        # Set default values for STL files or files with no arrays
+        if self.dataset_arrays:
+            default_array = self.dataset_arrays[0]
+            self.default_min, self.default_max = default_array.get("range")
+        else:
+            # Default values for STL files which have no scalar data
+            self.default_min, self.default_max = 0.0, 1.0
 
         # Mesh
         self.mesh_mapper = vtkDataSetMapper()
@@ -113,16 +119,22 @@ class VtkPipeline:
         self.mesh_actor.GetProperty().SetPointSize(1)
         self.mesh_actor.GetProperty().EdgeVisibilityOff()
 
-        # Mesh: Apply rainbow color map
-        mesh_lut = self.mesh_mapper.GetLookupTable()
-        mesh_lut.SetHueRange(0.666, 0.0)
-        mesh_lut.SetSaturationRange(1.0, 1.0)
-        mesh_lut.SetValueRange(1.0, 1.0)
-        mesh_lut.Build()
-
-        # Mesh: Set solid pastel blue color
-        self.mesh_mapper.SetScalarVisibility(False)  # Disable scalar coloring
-        self.mesh_actor.GetProperty().SetColor(0.7, 0.8, 1.0)  # Pastel blue color
+        # Mesh: Configure based on file type
+        if initial_file.lower().endswith('.stl'):
+            # STL files don't have scalar data, so disable scalar coloring
+            self.mesh_mapper.SetScalarVisibility(False)
+            self.mesh_actor.GetProperty().SetColor(0.8, 0.8, 0.9)  # Light blue color for STL
+        else:
+            # For VTU files with scalar data
+            mesh_lut = self.mesh_mapper.GetLookupTable()
+            mesh_lut.SetHueRange(0.666, 0.0)
+            mesh_lut.SetSaturationRange(1.0, 1.0)
+            mesh_lut.SetValueRange(1.0, 1.0)
+            mesh_lut.Build()
+            
+            # Set solid pastel blue color as default
+            self.mesh_mapper.SetScalarVisibility(False)
+            self.mesh_actor.GetProperty().SetColor(0.7, 0.8, 1.0)
 
         # Contour
         self.contour = vtkContourFilter()
@@ -133,28 +145,34 @@ class VtkPipeline:
         self.contour_actor.SetMapper(self.contour_mapper)
         self.renderer.AddActor(self.contour_actor)
 
-        # Contour: ContourBy default array
+        # Contour: Configure based on file type and available data
         self.contour_value = 0.5 * (self.default_max + self.default_min)
-        self.contour.SetInputArrayToProcess(
-            0, 0, 0, default_array.get("type"), default_array.get("text")
-        )
-        self.contour.SetValue(0, self.contour_value)
+        if self.dataset_arrays and not initial_file.lower().endswith('.stl'):
+            # For VTU files with scalar data
+            default_array = self.dataset_arrays[0]
+            self.contour.SetInputArrayToProcess(
+                0, 0, 0, default_array.get("type"), default_array.get("text")
+            )
+            self.contour.SetValue(0, self.contour_value)
+            
+            # Apply rainbow color map
+            contour_lut = self.contour_mapper.GetLookupTable()
+            contour_lut.SetHueRange(0.666, 0.0)
+            contour_lut.SetSaturationRange(1.0, 1.0)
+            contour_lut.SetValueRange(1.0, 1.0)
+            contour_lut.Build()
+            
+            # Set solid pastel blue color
+            self.contour_mapper.SetScalarVisibility(False)
+            self.contour_actor.GetProperty().SetColor(0.7, 0.8, 1.0)
+        else:
+            # For STL files, hide contour since it requires scalar data
+            self.contour_actor.SetVisibility(False)
 
         # Contour: Setup default representation to surface
         self.contour_actor.GetProperty().SetRepresentationToSurface()
         self.contour_actor.GetProperty().SetPointSize(1)
         self.contour_actor.GetProperty().EdgeVisibilityOff()
-
-        # Contour: Apply rainbow color map
-        contour_lut = self.contour_mapper.GetLookupTable()
-        contour_lut.SetHueRange(0.666, 0.0)
-        contour_lut.SetSaturationRange(1.0, 1.0)
-        contour_lut.SetValueRange(1.0, 1.0)
-        contour_lut.Build()
-
-        # Contour: Set solid pastel blue color
-        self.contour_mapper.SetScalarVisibility(False)  # Disable scalar coloring
-        self.contour_actor.GetProperty().SetColor(0.7, 0.8, 1.0)  # Pastel blue color
 
         # Cube Axes
         self.cube_axes = vtkCubeAxesActor()
