@@ -243,10 +243,16 @@ class CodeExecutionService:
         
         # Check for uploaded STL file
         uploaded_stl_path = os.path.join(CURRENT_DIRECTORY, "uploaded.stl")
+        blade_stl_path = os.path.join(CURRENT_DIRECTORY, "blade.stl")
+        
         if os.path.exists(uploaded_stl_path):
             context['UPLOADED_STL_PATH'] = uploaded_stl_path
             context['HAS_UPLOADED_STL'] = 'true'
             print(f">>> CODE_EXECUTION_SERVICE: Found STL file: {uploaded_stl_path}")
+        elif os.path.exists(blade_stl_path):
+            context['UPLOADED_STL_PATH'] = blade_stl_path
+            context['HAS_UPLOADED_STL'] = 'true'
+            print(f">>> CODE_EXECUTION_SERVICE: Using default STL file: {blade_stl_path}")
         else:
             context['UPLOADED_STL_PATH'] = ''
             context['HAS_UPLOADED_STL'] = 'false'

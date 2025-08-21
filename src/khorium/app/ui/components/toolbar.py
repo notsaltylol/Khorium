@@ -20,13 +20,13 @@ class ToolbarComponent:
                 __events=["change"],
             )
         
-        # Generate Mesh button
-        with vuetify3.VBtn(
-            "Generate Mesh",
-            color="primary",
-            classes="mr-2",
-            click=self.app.ctrl.generate_mesh,
-        ):
-            vuetify3.VIcon("mdi-auto-fix", classes="mr-1")
+        # # Generate Mesh button
+        # with vuetify3.VBtn(
+        #     "Generate Mesh",
+        #     color="primary",
+        #     classes="mr-2",
+        #     click=self.app.ctrl.generate_mesh,
+        # ):
+        #     vuetify3.VIcon("mdi-auto-fix", classes="mr-1")
         
         vuetify3.VSpacer()
